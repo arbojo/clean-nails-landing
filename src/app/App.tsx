@@ -1,0 +1,692 @@
+import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowRight, ChevronLeft, Star, Clock, Heart, Droplets, CheckCircle2 } from "lucide-react";
+import leveImg from "../assets/leve.jpg";
+import ExitModal from "./components/ExitModal";
+import moderadoImg from "../assets/moderado.jpg";
+import severoImg from "../assets/severo.jpg";
+import finalImg from "../assets/final.jpeg";
+
+type Severity = "mild" | "moderate" | "severe";
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const conditionMeta = {
+  mild: {
+    labelEs: "Leve",
+    tagline: "Señales tempranas que ya puedes ver",
+    image: leveImg,
+    symptoms: ["Ligera pérdida de brillo natural", "Leve cambio de tonalidad", "Pequeñas líneas en la superficie"],
+    statNumber: "1 de cada 3",
+    statDetail: "personas nota cambios en sus uñas con el tiempo. Y la mayoría se pregunta si hay algo que realmente funcione.",
+    empathyTitle: "Sabemos que ya lo notaste.",
+    empathyText:
+      "Si estás aquí es porque ya lo viste y te preocupó. Y probablemente ya probaste algo: una crema, un esmalte, buscar en internet. Es normal. La mayoría hace lo mismo cuando nota algo distinto en sus uñas.",
+    solutionTitle: "Tu Rutina: Prevención y Cuidado",
+    solutionBody:
+      "Clean Nails usa tecnología de luz para mejorar progresivamente la apariencia de tus uñas. Son solo 7 minutos, dos veces al día. Así de simple.",
+    testimonials: [
+      { name: "Carmen R.", age: 48, text: "Empecé a notar mis uñas más opacas. Usé Clean Nails 4 semanas y la apariencia mejoró mucho. No esperaba que funcionara tan bien.", weeks: 4 },
+      { name: "Alex M.", age: 47, text: "Lo ignoré por meses. Cuando empecé con Clean Nails, en 3 semanas ya veía la diferencia. Mis uñas se veían mucho mejor.", weeks: 3 },
+      { name: "Lucía G.", age: 51, text: "Mis amigas pensaron que era una manicura nueva. Solo era Clean Nails después de un mes de uso constante.", weeks: 5 },
+    ],
+    product: "Clean Nails — Dispositivo de Luz",
+    productDesc:
+      "Un dispositivo ligero y portátil con tecnología de luz para el cuidado estético de tus uñas. Fácil de usar en casa.",
+    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "1 Estuche de transporte", "Guía rápida de uso"],
+    timeframe: "3–4 semanas para notar la diferencia",
+  },
+  moderate: {
+    labelEs: "Moderado",
+    tagline: "Cambios que ya son difíciles de ignorar",
+    image: moderadoImg,
+    symptoms: ["Textura más áspera o irregular", "Coloración más opaca o amarillenta", "Bordes que se resquebrajan"],
+    statNumber: "7 de cada 10",
+    statDetail: "personas notan cambios en sus uñas después de los 40. Y muchas ya probaron de todo sin éxito.",
+    empathyTitle: "Sabemos que ya intentaste de todo.",
+    empathyText:
+      "Has probado cremas, remedios, quizá hasta productos de farmacia. Y nada funcionó como esperabas. No es que lo hayas hecho mal. Es que la mayoría de las soluciones no están hechas para el uso constante que esto requiere.",
+    solutionTitle: "Tu Rutina: Regeneración Progresiva",
+    solutionBody:
+      "Clean Nails usa tecnología de luz para mejorar la apariencia de tus uñas de forma progresiva. 7 minutos, dos veces al día, sin complicaciones.",
+    testimonials: [
+      { name: "Patricia S.", age: 57, text: "Probé cremas, esmaltes, de todo. Clean Nails fue lo único que realmente hizo la diferencia. A las 6 semanas, ya no me preocupaba mostrar mis pies.", weeks: 6 },
+      { name: "Carlos R.", age: 55, text: "La gente notó el cambio y me preguntó qué había hecho. Les sorprendió que fuera un dispositivo tan sencillo.", weeks: 7 },
+      { name: "Elena V.", age: 61, text: "Creí que esto no tenía solución. Me alegra haberle dado una oportunidad.", weeks: 8 },
+    ],
+    product: "Clean Nails — Dispositivo de Luz",
+    productDesc:
+      "Un dispositivo ligero y portátil con tecnología de luz para el cuidado estético de tus uñas. Ideal para tu rutina diaria.",
+    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "1 Estuche de transporte", "1 Kit de limpieza", "Guía de uso en 5 pasos"],
+    timeframe: "6–8 semanas para notar la diferencia",
+  },
+  severe: {
+    labelEs: "Severo",
+    tagline: "Afectación importante que necesita atención",
+    image: severoImg,
+    symptoms: ["Uñas notablemente opacas o amarillentas", "Textura visiblemente irregular", "Fragilidad o sensibilidad"],
+    statNumber: "97%",
+    statDetail: "de personas que siguieron la rutina completa notaron mejoría. Porque la constancia sí marca la diferencia.",
+    empathyTitle: "Sabemos que esto ya pesa.",
+    empathyText:
+      "Llevas tiempo con esto. Has gastado dinero, tiempo y paciencia en cosas que no dieron resultado. Es frustrante, y es válido sentirse así. Pero no significa que no haya una opción distinta.",
+    solutionTitle: "Tu Rutina: Constancia Total",
+    solutionBody:
+      "Constancia y tecnología de luz. Clean Nails se usa 7 minutos, dos veces al día. La mejora es progresiva, pero los resultados hablan solos.",
+    testimonials: [
+      { name: "Rosa T.", age: 64, text: "Dos años probando cosas sin resultado. Clean Nails me tomó 10 semanas, pero valió cada día.", weeks: 10 },
+      { name: "Consuelo A.", age: 67, text: "Volví a usar sandalias después de tres años. Mi familia no lo podía creer. Yo sí, porque vi el cambio paso a paso.", weeks: 11 },
+      { name: "Dolores M.", age: 59, text: "El resultado habla por sí solo. Solo había que ser constante.", weeks: 9 },
+    ],
+    product: "Clean Nails — Dispositivo de Luz",
+    productDesc:
+      "Nuestro dispositivo más completo — tecnología de luz para el cuidado intensivo de la apariencia de tus uñas.",
+    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "1 Estuche de transporte", "1 Kit de limpieza", "Guantes protectores (30 noches)", "Seguimiento con especialista en cuidado de uñas"],
+    timeframe: "8–12 semanas de transformación completa",
+  },
+};
+
+const objections = [
+  { Icon: Clock, title: "Has probado muchos productos", text: "Cremas, esmaltes, remedios caseros, productos de farmacia… Si estás aquí, probablemente ya lo intentaste. Y nada te dio el resultado que esperabas." },
+  { Icon: Droplets, title: "Esperas resultados rápidos", text: "Es normal querer ver cambios ya. Pero la apariencia de las uñas no mejora de un día para otro. Los productos que prometen resultados inmediatos suelen decepcionar." },
+  { Icon: Heart, title: "Abandonas antes de tiempo", text: "Es la razón más común. Se empieza con ganas, pero al no ver resultados rápidos se deja de lado. La clave es la constancia: 7 minutos, dos veces al día." },
+];
+
+// ─── Shared UI ────────────────────────────────────────────────────────────────
+
+function ProgressBar({ step, total }: { step: number; total: number }) {
+  const pct = Math.round(((step + 1) / total) * 100);
+  return (
+    <div className="w-full h-0.5 bg-border">
+      <motion.div
+        className="h-full bg-accent"
+        initial={false}
+        animate={{ width: `${pct}%` }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+      />
+    </div>
+  );
+}
+
+function Header({ step, onBack }: { step: number; onBack: () => void }) {
+  return (
+    <div className="flex items-center justify-between px-5 pt-6 pb-2 max-w-lg mx-auto">
+      <div className="w-10">
+        {step > 0 && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors text-sm"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+      <span className="font-display text-lg tracking-widest text-foreground">CLEAN NAILS</span>
+      <div className="w-10 text-right">
+        <span className="text-[0.65rem] tracking-[0.1em] text-muted-foreground font-body">
+          {step + 1}<span className="opacity-40">/6</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ScreenQuestion({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[0.65rem] tracking-[0.25em] uppercase text-muted-foreground font-body font-medium mb-2 text-center">
+      {children}
+    </p>
+  );
+}
+
+function PrimaryButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-body font-medium text-sm tracking-[0.06em] flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+      style={{ WebkitTapHighlightColor: "transparent" }}
+    >
+      {children}
+      <ArrowRight className="w-4 h-4" />
+    </button>
+  );
+}
+
+// ─── Slide variants ───────────────────────────────────────────────────────────
+
+const slideVariants = {
+  enter: (dir: number) => ({ x: dir > 0 ? 48 : -48, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -48 : 48, opacity: 0 }),
+};
+
+// ─── Step 0: Assessment ───────────────────────────────────────────────────────
+
+function StepAssessment({ onSelect }: { onSelect: (s: Severity) => void }) {
+  const [hovered, setHovered] = useState<Severity | null>(null);
+  const severities: Severity[] = ["mild", "moderate", "severe"];
+
+  return (
+    <div className="px-4 pt-4 pb-10 max-w-lg mx-auto">
+      <div className="text-center mb-7">
+        <ScreenQuestion>Paso 1 de 6</ScreenQuestion>
+        <h1 className="font-display text-[2rem] leading-tight text-foreground mb-2">
+          ¿Cómo están<br />
+          <em>tus uñas hoy?</em>
+        </h1>
+        <p className="text-sm text-muted-foreground font-body font-light leading-relaxed max-w-xs mx-auto">
+          Elige la opción que mejor describe lo que ves. No hay respuesta incorrecta.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3.5">
+        {severities.map((sev) => {
+          const c = conditionMeta[sev];
+          return (
+            <button
+              key={sev}
+              onClick={() => onSelect(sev)}
+              onMouseEnter={() => setHovered(sev)}
+              onMouseLeave={() => setHovered(null)}
+              className="group relative rounded-2xl overflow-hidden bg-card border border-border text-left shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              <div className="flex items-stretch">
+                {/* Image strip */}
+                <div className="relative w-28 shrink-0 bg-stone-200 overflow-hidden">
+                  <img
+                    src={c.image}
+                    alt={c.labelEs}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/20" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 px-4 py-4 flex flex-col justify-between min-h-[7rem]">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[0.68rem] tracking-[0.2em] uppercase font-body font-medium text-muted-foreground">
+                        {c.labelEs}
+                      </span>
+                      <motion.div animate={{ x: hovered === sev ? 3 : 0 }} transition={{ duration: 0.15 }}>
+                        <ArrowRight className="w-3.5 h-3.5 text-accent" />
+                      </motion.div>
+                    </div>
+                    <p className="text-sm font-display text-foreground leading-snug mb-2.5">
+                      {c.tagline}
+                    </p>
+                  </div>
+                  <ul className="flex flex-col gap-1">
+                    {c.symptoms.slice(0, 2).map((s) => (
+                      <li key={s} className="flex items-center gap-1.5 text-[0.72rem] text-muted-foreground font-light">
+                        <span className="w-1 h-1 rounded-full bg-accent shrink-0" />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-center text-[0.7rem] text-muted-foreground/70 font-light mt-6">
+        No compartimos tus datos · Sin compromiso
+      </p>
+    </div>
+  );
+}
+
+// ─── Step 1: Validation ───────────────────────────────────────────────────────
+
+function StepValidation({ sev, onNext }: { sev: Severity; onNext: () => void }) {
+  const c = conditionMeta[sev];
+  return (
+    <div className="px-5 pt-4 pb-10 max-w-lg mx-auto">
+      <div className="text-center mb-8">
+        <ScreenQuestion>¿Te suena esto?</ScreenQuestion>
+        <h2 className="font-display text-[2rem] leading-tight text-foreground">
+          {c.empathyTitle}
+        </h2>
+      </div>
+
+      {/* Big stat */}
+      <div className="rounded-2xl bg-secondary border border-border px-6 py-7 text-center mb-6">
+        <p className="font-display text-5xl text-foreground mb-2">{c.statNumber}</p>
+        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[220px] mx-auto">
+          {c.statDetail}
+        </p>
+      </div>
+
+      {/* Social insight - frustration */}
+      <p className="text-sm text-muted-foreground font-light leading-relaxed text-center max-w-[280px] mx-auto mb-6">
+        Y hemos visto este caso cientos de veces:<br />
+        personas que probaron de todo y están hartas de soluciones que no funcionan.
+      </p>
+
+      {/* Empathy block */}
+      <div className="mb-6">
+        <p className="text-[0.92rem] leading-relaxed text-foreground font-light">
+          {c.empathyText}
+        </p>
+      </div>
+
+      {/* Condition badge */}
+      <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-border bg-card mb-8">
+        <span className="text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground font-medium">
+          Tu caso:
+        </span>
+        <span className="text-xs font-medium text-foreground">{c.labelEs} · {c.tagline}</span>
+      </div>
+
+      <PrimaryButton onClick={onNext}>Quiero ver si esto es diferente</PrimaryButton>
+    </div>
+  );
+}
+
+// ─── Step 2: Education ────────────────────────────────────────────────────────
+
+function StepEducation({ onNext }: { onNext: () => void }) {
+  return (
+    <div className="px-5 pt-4 pb-10 max-w-lg mx-auto">
+      <div className="text-center mb-8">
+        <ScreenQuestion>¿Por qué no ha funcionado antes?</ScreenQuestion>
+        <h2 className="font-display text-[2rem] leading-tight text-foreground mb-2">
+          Quizá esto ya<br />
+          <em>te ha pasado antes.</em>
+        </h2>
+        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[260px] mx-auto">
+          No te preocupes. Es más común de lo que crees. Y casi siempre es por alguna de estas razones.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 mb-8">
+        {objections.map(({ Icon, title, text }) => (
+          <div key={title} className="rounded-xl px-5 py-4 border border-border bg-card">
+            <div className="flex items-start gap-4">
+              <div className="mt-0.5 p-2 rounded-lg bg-secondary shrink-0">
+                <Icon className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground/80 mb-1">{title}</p>
+                <p className="text-[0.8rem] text-muted-foreground font-light leading-relaxed">{text}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <PrimaryButton onClick={onNext}>¿Y qué funciona entonces?</PrimaryButton>
+    </div>
+  );
+}
+
+// ─── Step 3: Proof ────────────────────────────────────────────────────────────
+
+function StepProof({ sev, onNext }: { sev: Severity; onNext: () => void }) {
+  const c = conditionMeta[sev];
+  return (
+    <div className="px-5 pt-4 pb-10 max-w-lg mx-auto">
+      <div className="text-center mb-8">
+        <ScreenQuestion>¿Realmente funciona?</ScreenQuestion>
+        <h2 className="font-display text-[2rem] leading-tight text-foreground mb-2">
+          Personas con<br />
+          <em>tu mismo caso.</em>
+        </h2>
+        <p className="text-sm text-muted-foreground font-light">
+          Caso {c.labelEs.toLowerCase()} · Resultados reales.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3.5 mb-8">
+        {c.testimonials.map((t) => (
+          <div key={t.name} className="rounded-2xl border border-border bg-card px-5 py-5">
+            <div className="flex gap-0.5 mb-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} className="w-3 h-3 fill-accent text-accent" />
+              ))}
+            </div>
+            <p className="text-[0.85rem] leading-relaxed text-foreground font-light italic mb-4">
+              &ldquo;{t.text}&rdquo;
+            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
+                  <span className="text-[0.7rem] font-medium text-muted-foreground">
+                    {t.name[0]}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-foreground leading-none mb-0.5">{t.name}</p>
+                  <p className="text-[0.65rem] text-muted-foreground font-light">{t.age} años · Compra verificada</p>
+                </div>
+              </div>
+              <span className="text-[0.65rem] tracking-[0.1em] text-muted-foreground font-light text-right leading-tight">
+                {t.weeks} sem.
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <PrimaryButton onClick={onNext}>Ver el tratamiento</PrimaryButton>
+    </div>
+  );
+}
+
+// ─── Step 4: Solution ─────────────────────────────────────────────────────────
+
+function StepSolution({ sev, onNext }: { sev: Severity; onNext: () => void }) {
+  const c = conditionMeta[sev];
+  return (
+    <div className="px-5 pt-4 pb-10 max-w-lg mx-auto">
+      <div className="text-center mb-6">
+        <ScreenQuestion>¿Cuál es mi tratamiento?</ScreenQuestion>
+        <h2 className="font-display text-[1.85rem] leading-tight text-foreground mb-1">
+          {c.solutionTitle}
+        </h2>
+      </div>
+
+      {/* Product image */}
+      <div className="relative rounded-2xl overflow-hidden bg-stone-50 border border-border mb-5 h-52">
+        <img
+          src={finalImg}
+          alt="Tratamiento Clean Nails"
+          className="w-full h-full object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-transparent" />
+        <div className="absolute bottom-3.5 left-4">
+          <span className="text-[0.65rem] tracking-[0.18em] uppercase text-muted-foreground font-medium">
+            {c.labelEs}
+          </span>
+          <p className="font-display text-base text-foreground leading-tight">{c.product}</p>
+        </div>
+      </div>
+
+      <p className="text-[0.88rem] leading-relaxed text-muted-foreground font-light mb-5">
+        {c.solutionBody}
+      </p>
+
+      {/* Timeline */}
+      <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-secondary border border-border mb-5">
+        <div className="w-1 h-8 rounded-full bg-accent shrink-0" />
+        <div>
+          <p className="text-[0.65rem] tracking-[0.15em] uppercase text-muted-foreground font-medium mb-0.5">
+            Tiempo estimado
+          </p>
+          <p className="text-sm font-medium text-foreground">{c.timeframe}</p>
+        </div>
+      </div>
+
+      {/* Includes */}
+      <div className="mb-7">
+        <p className="text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground font-medium mb-3">
+          Incluye
+        </p>
+        <ul className="flex flex-col gap-2">
+          {c.includes.map((item) => (
+            <li key={item} className="flex items-center gap-3 text-[0.83rem] text-foreground font-light">
+              <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <PrimaryButton onClick={onNext}>Quiero Clean Nails</PrimaryButton>
+    </div>
+  );
+}
+
+// ─── Step 5: Offer ────────────────────────────────────────────────────────────
+
+function StepOffer({ sev }: { sev: Severity }) {
+  const c = conditionMeta[sev];
+  const [form, setForm] = useState({ name: "", phone: "" });
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.name.trim() && form.phone.trim()) setSubmitted(true);
+  };
+
+  if (submitted) {
+    return (
+      <div className="px-5 pt-4 pb-10 max-w-lg mx-auto flex flex-col items-center text-center min-h-[60dvh] justify-center">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="w-16 h-16 rounded-full bg-accent/15 flex items-center justify-center mb-6"
+        >
+          <CheckCircle2 className="w-8 h-8 text-accent" />
+        </motion.div>
+        <h2 className="font-display text-2xl text-foreground mb-3">
+          Tu kit está reservado.
+        </h2>
+        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[260px]">
+          Nuestro equipo te contactará en las próximas <strong className="text-foreground font-medium">2 horas</strong> para confirmar tu pedido y resolver cualquier duda.
+        </p>
+        <div className="mt-8 px-5 py-4 rounded-xl bg-secondary border border-border w-full text-left">
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground font-medium mb-1">Tu tratamiento</p>
+          <p className="text-sm font-medium text-foreground">{c.product}</p>
+          <p className="text-xs text-muted-foreground font-light">{c.timeframe}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-5 pt-4 pb-10 max-w-lg mx-auto">
+      <div className="text-center mb-8">
+        <ScreenQuestion>¿Cómo lo recibo?</ScreenQuestion>
+        <h2 className="font-display text-[2rem] leading-tight text-foreground mb-2">
+          Tu kit está<br />
+          <em>listo para ti.</em>
+        </h2>
+        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[240px] mx-auto">
+          Déjanos tu nombre y WhatsApp. Te contactaremos hoy para coordinar la entrega.
+        </p>
+      </div>
+
+      {/* Summary card */}
+      <div className="rounded-xl border border-border bg-card px-4 py-4 mb-6">
+        <p className="text-[0.65rem] tracking-[0.18em] uppercase text-muted-foreground font-medium mb-1">
+          Tu tratamiento
+        </p>
+        <p className="text-sm font-medium text-foreground mb-0.5">{c.product}</p>
+        <p className="text-xs text-muted-foreground font-light">{c.timeframe}</p>
+      </div>
+
+      {/* Delivery zones */}
+      <div className="rounded-xl border border-border bg-secondary px-4 py-4 mb-6">
+        <p className="text-[0.65rem] tracking-[0.18em] uppercase text-accent font-medium mb-2">
+          Entrega en tu zona
+        </p>
+        <p className="text-xs text-muted-foreground font-light mb-2">
+          Actualmente realizamos entregas en:
+        </p>
+        <ul className="flex flex-col gap-1 mb-3">
+          {[
+            "León — Entrega todos los días. Existe opción de entrega el mismo día dependiendo del horario del pedido.",
+            "Silao, Guanajuato Capital e Irapuato — Entregas los lunes, miércoles y viernes.",
+            "Lagos de Moreno — Entregas los martes, jueves y sábados.",
+          ].map((t) => (
+            <li key={t} className="flex items-start gap-2 text-[0.75rem] text-muted-foreground font-light">
+              <span className="w-1 h-1 rounded-full bg-accent shrink-0 mt-1.5" />
+              {t}
+            </li>
+          ))}
+        </ul>
+        <p className="text-[0.7rem] text-muted-foreground/70 font-light italic">
+          Organizamos nuestras rutas para que recibas tu pedido lo antes posible.
+        </p>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-5">
+        <div>
+          <label className="block text-[0.7rem] tracking-[0.15em] uppercase text-muted-foreground font-medium mb-1.5">
+            Tu nombre
+          </label>
+          <input
+            type="text"
+            placeholder="Nombre completo"
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            className="w-full px-4 py-3.5 rounded-xl border border-border bg-input-background text-foreground text-sm font-light placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/60 transition-colors"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-[0.7rem] tracking-[0.15em] uppercase text-muted-foreground font-medium mb-1.5">
+            WhatsApp
+          </label>
+          <input
+            type="tel"
+            placeholder="+34 600 000 000"
+            value={form.phone}
+            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+            className="w-full px-4 py-3.5 rounded-xl border border-border bg-input-background text-foreground text-sm font-light placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/60 transition-colors"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-body font-medium text-sm tracking-[0.06em] flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] mt-1"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          Solicitar mi kit ahora
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </form>
+
+      {/* Micro trust */}
+      <div className="flex flex-col gap-2 mb-6">
+        {["Envío gratuito a domicilio", "Garantía de devolución 60 días", "Sin suscripciones ni cargos ocultos"].map(
+          (t) => (
+            <div key={t} className="flex items-center gap-2 text-[0.78rem] text-muted-foreground font-light">
+              <span className="w-1 h-1 rounded-full bg-accent shrink-0" />
+              {t}
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Bottom trust row */}
+      <div className="grid grid-cols-3 gap-2 text-center border-t border-border pt-5">
+        {[
+          { val: "10.847", sub: "uñas cuidadas" },
+          { val: "Eficaz", sub: "con uso constante" },
+          { val: "97%", sub: "lo recomendaría" },
+        ].map((s) => (
+          <div key={s.sub}>
+            <p className="font-display text-base text-foreground mb-0.5">{s.val}</p>
+            <p className="text-[0.62rem] text-muted-foreground font-light leading-tight">{s.sub}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+const TOTAL_STEPS = 6;
+
+export default function App() {
+  const [step, setStep] = useState(0);
+  const [dir, setDir] = useState(1);
+  const [selected, setSelected] = useState<Severity | null>(null);
+  const [showExitModal, setShowExitModal] = useState(false);
+
+  const go = (n: number) => {
+    setDir(n > step ? 1 : -1);
+    setStep(n);
+  };
+
+  const next = () => {
+    const n = Math.min(step + 1, TOTAL_STEPS - 1);
+    window.history.pushState({ step: n }, "");
+    go(n);
+  };
+  const back = () => go(Math.max(step - 1, 0));
+
+  // One-time init
+  useEffect(() => {
+    window.history.replaceState({ step: 0 }, "");
+  }, []);
+
+  // Intercept browser back on StepOffer
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const s = (e.state as { step?: number } | null)?.step ?? 0;
+      if (step === TOTAL_STEPS - 1) {
+        setShowExitModal(true);
+      } else {
+        setShowExitModal(false);
+        const clamped = Math.max(0, Math.min(s, TOTAL_STEPS - 1));
+        setDir(clamped > step ? 1 : -1);
+        setStep(clamped);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [step]);
+
+  const handleSelect = (sev: Severity) => {
+    setSelected(sev);
+    setDir(1);
+    setStep(1);
+    window.history.pushState({ step: 1 }, "");
+  };
+
+  const handleExitContinue = () => {
+    window.history.pushState({ step: TOTAL_STEPS - 1 }, "");
+    setShowExitModal(false);
+  };
+
+  const handleExitClose = () => {
+    setShowExitModal(false);
+    back();
+  };
+
+  const screens = [
+    <StepAssessment key="0" onSelect={handleSelect} />,
+    <StepValidation key="1" sev={selected ?? "mild"} onNext={next} />,
+    <StepEducation key="2" onNext={next} />,
+    <StepProof key="3" sev={selected ?? "mild"} onNext={next} />,
+    <StepSolution key="4" sev={selected ?? "mild"} onNext={next} />,
+    <StepOffer key="5" sev={selected ?? "mild"} />,
+  ];
+
+  return (
+    <div className="min-h-screen bg-background font-body">
+      <ProgressBar step={step} total={TOTAL_STEPS} />
+      <Header step={step} onBack={back} />
+
+      <AnimatePresence mode="wait" custom={dir}>
+        <motion.div
+          key={step}
+          custom={dir}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.32, ease: "easeInOut" }}
+        >
+          {screens[step]}
+        </motion.div>
+      </AnimatePresence>
+
+      <ExitModal
+        open={showExitModal}
+        onContinue={handleExitContinue}
+        onClose={handleExitClose}
+      />
+    </div>
+  );
+}
