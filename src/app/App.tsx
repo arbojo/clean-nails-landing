@@ -6,6 +6,7 @@ import ExitModal from "./components/ExitModal";
 import moderadoImg from "../assets/moderado.jpg";
 import severoImg from "../assets/severo.jpg";
 import finalImg from "../assets/final.jpeg";
+import { supabase } from "../lib/supabase";
 
 type Severity = "mild" | "moderate" | "severe";
 
@@ -33,7 +34,7 @@ const conditionMeta = {
     product: "Clean Nails — Dispositivo de Luz",
     productDesc:
       "Un dispositivo ligero y portátil con tecnología de luz para el cuidado estético de tus uñas. Fácil de usar en casa.",
-    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "1 Estuche de transporte", "Guía rápida de uso"],
+    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "Guía rápida de uso", "Asistencia por WhatsApp para resolver tus dudas"],
     timeframe: "3–4 semanas para notar la diferencia",
   },
   moderate: {
@@ -57,7 +58,7 @@ const conditionMeta = {
     product: "Clean Nails — Dispositivo de Luz",
     productDesc:
       "Un dispositivo ligero y portátil con tecnología de luz para el cuidado estético de tus uñas. Ideal para tu rutina diaria.",
-    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "1 Estuche de transporte", "1 Kit de limpieza", "Guía de uso en 5 pasos"],
+    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "Guía de uso en 5 pasos", "Asistencia personalizada por WhatsApp"],
     timeframe: "6–8 semanas para notar la diferencia",
   },
   severe: {
@@ -81,7 +82,7 @@ const conditionMeta = {
     product: "Clean Nails — Dispositivo de Luz",
     productDesc:
       "Nuestro dispositivo más completo — tecnología de luz para el cuidado intensivo de la apariencia de tus uñas.",
-    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "1 Estuche de transporte", "1 Kit de limpieza", "Guantes protectores (30 noches)", "Seguimiento con especialista en cuidado de uñas"],
+    includes: ["1 Dispositivo Clean Nails", "1 Cargador USB", "Asistencia personalizada por WhatsApp", "Guía de uso paso a paso"],
     timeframe: "8–12 semanas de transformación completa",
   },
 };
@@ -390,11 +391,11 @@ function StepSolution({ sev, onNext }: { sev: Severity; onNext: () => void }) {
       </div>
 
       {/* Product image */}
-      <div className="relative rounded-2xl overflow-hidden bg-stone-50 border border-border mb-5 h-52">
+      <div className="relative rounded-2xl overflow-hidden bg-stone-50 border border-border mb-5 h-72">
         <img
           src={finalImg}
           alt="Tratamiento Clean Nails"
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-contain object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-transparent" />
         <div className="absolute bottom-3.5 left-4">
@@ -423,7 +424,7 @@ function StepSolution({ sev, onNext }: { sev: Severity; onNext: () => void }) {
       {/* Includes */}
       <div className="mb-7">
         <p className="text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground font-medium mb-3">
-          Incluye
+          Asistencia incluida
         </p>
         <ul className="flex flex-col gap-2">
           {c.includes.map((item) => (
@@ -444,12 +445,64 @@ function StepSolution({ sev, onNext }: { sev: Severity; onNext: () => void }) {
 
 function StepOffer({ sev }: { sev: Severity }) {
   const c = conditionMeta[sev];
-  const [form, setForm] = useState({ name: "", phone: "" });
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    street: "",
+    colony: "",
+    city: "",
+    zip: "",
+    references: "",
+  });
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const cities = ["León", "Silao", "Guanajuato Capital", "Irapuato", "Lagos de Moreno"];
+
+  const deliveryMessages: Record<string, string> = {
+    León: "Entregas todos los días.\nSi tu pedido se registra antes del horario de corte, puede entregarse el mismo día.",
+    Silao: "Entregamos los lunes, miércoles y viernes.",
+    "Guanajuato Capital": "Entregamos los lunes, miércoles y viernes.",
+    Irapuato: "Entregamos los lunes, miércoles y viernes.",
+    "Lagos de Moreno": "Entregamos los martes, jueves y sábados.",
+  };
+
+  const change = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.name.trim() && form.phone.trim()) setSubmitted(true);
+    if (!form.name.trim() || !form.phone.trim() || !form.street.trim() || !form.colony.trim() || !form.city) return;
+
+    const { error } = await supabase.from("orders").insert({
+      name: form.name,
+      phone: form.phone,
+      street: form.street,
+      colony: form.colony,
+      city: form.city,
+      zip: form.zip || null,
+      references: form.references || null,
+      severity: sev,
+      product: conditionMeta[sev].product,
+      total: 599.00,
+    });
+
+    if (error) {
+      console.error("Error al registrar pedido:", error);
+      return;
+    }
+
+    const msg = encodeURIComponent(
+      `*Nuevo pedido Clean Nails*\n\n` +
+      `Nombre: ${form.name}\n` +
+      `Teléfono: ${form.phone}\n` +
+      `Dirección: ${form.street}, ${form.colony}\n` +
+      `Ciudad: ${form.city}\n` +
+      (form.zip ? `CP: ${form.zip}\n` : "") +
+      (form.references ? `Referencias: ${form.references}\n` : "") +
+      `\nTratamiento: ${conditionMeta[sev].labelEs}\n` +
+      `Producto: ${conditionMeta[sev].product}`
+    );
+    window.open(`https://wa.me/524775250039?text=${msg}`, "_blank");
+    setSubmitted(true);
   };
 
   if (submitted) {
@@ -464,19 +517,36 @@ function StepOffer({ sev }: { sev: Severity }) {
           <CheckCircle2 className="w-8 h-8 text-accent" />
         </motion.div>
         <h2 className="font-display text-2xl text-foreground mb-3">
-          Tu kit está reservado.
+          ¡Gracias, {form.name.split(" ")[0]}!
         </h2>
-        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[260px]">
-          Nuestro equipo te contactará en las próximas <strong className="text-foreground font-medium">2 horas</strong> para confirmar tu pedido y resolver cualquier duda.
+        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[300px] mb-2">
+          Recibimos tu pedido de Clean Nails por <strong className="text-foreground font-medium">$599 MXN</strong>.
         </p>
-        <div className="mt-8 px-5 py-4 rounded-xl bg-secondary border border-border w-full text-left">
-          <p className="text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground font-medium mb-1">Tu tratamiento</p>
-          <p className="text-sm font-medium text-foreground">{c.product}</p>
-          <p className="text-xs text-muted-foreground font-light">{c.timeframe}</p>
+        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[300px] mb-2">
+          Te escribiremos por WhatsApp al <strong className="text-foreground font-medium">{form.phone}</strong> para coordinar la entrega en <strong className="text-foreground font-medium">{form.city}</strong>.
+        </p>
+        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[300px]">
+          Durante 21 días tendrás acompañamiento para aprovechar al máximo tu dispositivo.
+        </p>
+        <div className="mt-8 w-full rounded-xl bg-secondary border border-border px-5 py-4 text-left">
+          <p className="text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground font-medium mb-2">Tu pedido</p>
+          <p className="text-base font-medium text-foreground">{form.name}</p>
+          <p className="text-sm text-muted-foreground font-light">{c.product}</p>
+          <p className="text-sm text-muted-foreground font-light">{form.city}</p>
+          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+            <span className="text-[0.65rem] tracking-[0.15em] uppercase text-muted-foreground font-medium">Total</span>
+            <span className="font-display text-lg text-foreground">$599 MXN</span>
+          </div>
         </div>
+        <p className="font-display text-xl text-foreground mt-7">
+          ¡Gracias por tu compra!
+        </p>
       </div>
     );
   }
+
+  const inputClass = "w-full px-4 py-3.5 rounded-xl border border-border bg-input-background text-foreground text-sm font-light placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/60 transition-colors";
+  const labelClass = "block text-[0.7rem] tracking-[0.15em] uppercase text-muted-foreground font-medium mb-1.5";
 
   return (
     <div className="px-5 pt-4 pb-10 max-w-lg mx-auto">
@@ -486,71 +556,137 @@ function StepOffer({ sev }: { sev: Severity }) {
           Tu kit está<br />
           <em>listo para ti.</em>
         </h2>
-        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[240px] mx-auto">
-          Déjanos tu nombre y WhatsApp. Te contactaremos hoy para coordinar la entrega.
+        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[260px] mx-auto">
+          Completa tus datos y te contactaremos al <strong className="text-foreground font-medium">477 525 0039</strong> para coordinar la entrega.
         </p>
       </div>
 
-      {/* Summary card */}
-      <div className="rounded-xl border border-border bg-card px-4 py-4 mb-6">
-        <p className="text-[0.65rem] tracking-[0.18em] uppercase text-muted-foreground font-medium mb-1">
-          Tu tratamiento
-        </p>
-        <p className="text-sm font-medium text-foreground mb-0.5">{c.product}</p>
-        <p className="text-xs text-muted-foreground font-light">{c.timeframe}</p>
+      {/* Price */}
+      <div className="rounded-2xl bg-secondary border border-border px-6 py-6 text-center mb-5">
+        <p className="text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground font-medium mb-1">Precio único</p>
+        <p className="font-display text-4xl text-foreground">$599 MXN</p>
       </div>
 
-      {/* Delivery zones */}
-      <div className="rounded-xl border border-border bg-secondary px-4 py-4 mb-6">
-        <p className="text-[0.65rem] tracking-[0.18em] uppercase text-accent font-medium mb-2">
-          Entrega en tu zona
-        </p>
-        <p className="text-xs text-muted-foreground font-light mb-2">
-          Actualmente realizamos entregas en:
-        </p>
-        <ul className="flex flex-col gap-1 mb-3">
-          {[
-            "León — Entrega todos los días. Existe opción de entrega el mismo día dependiendo del horario del pedido.",
-            "Silao, Guanajuato Capital e Irapuato — Entregas los lunes, miércoles y viernes.",
-            "Lagos de Moreno — Entregas los martes, jueves y sábados.",
-          ].map((t) => (
-            <li key={t} className="flex items-start gap-2 text-[0.75rem] text-muted-foreground font-light">
-              <span className="w-1 h-1 rounded-full bg-accent shrink-0 mt-1.5" />
-              {t}
+      {/* Kit content */}
+      <div className="rounded-xl border border-border bg-card px-4 py-4 mb-5">
+        <p className="text-[0.65rem] tracking-[0.18em] uppercase text-muted-foreground font-medium mb-3">El kit incluye</p>
+        <ul className="flex flex-col gap-2">
+          {["Dispositivo Clean Nails", "Cable USB de carga", "Guía rápida de uso"].map((item) => (
+            <li key={item} className="flex items-center gap-2 text-[0.83rem] text-foreground font-light">
+              <span className="w-1 h-1 rounded-full bg-accent shrink-0" />
+              {item}
             </li>
           ))}
         </ul>
-        <p className="text-[0.7rem] text-muted-foreground/70 font-light italic">
-          Organizamos nuestras rutas para que recibas tu pedido lo antes posible.
-        </p>
       </div>
+
+      {/* Experience */}
+      <div className="rounded-xl border border-border bg-secondary px-4 py-4 mb-6">
+        <p className="text-[0.65rem] tracking-[0.18em] uppercase text-accent font-medium mb-3">Tu compra incluye</p>
+        <div className="flex flex-col gap-3">
+          {[
+            { icon: "🚚", text: "Envío sin costo en las ciudades participantes. Entrega local programada según tu ciudad." },
+            { icon: "🛡", text: "Garantía de 30 días por defectos de fabricación." },
+            { icon: "💬", text: "Programa de Acompañamiento Clean Nails durante 21 días por WhatsApp para ayudarte a mantener tu rutina, resolver dudas y aprovechar al máximo tu dispositivo." },
+          ].map(({ icon, text }) => (
+            <div key={icon} className="flex items-start gap-2 text-[0.83rem] text-foreground font-light">
+              <span className="shrink-0">{icon}</span>
+              <span>{text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Dynamic city message */}
+      {form.city && deliveryMessages[form.city] && (
+        <div className="rounded-xl border border-border bg-accent/5 px-4 py-3.5 mb-6">
+          <p className="text-[0.65rem] tracking-[0.18em] uppercase text-accent font-medium mb-1">Entrega en tu zona</p>
+          <p className="text-sm text-foreground font-light whitespace-pre-line">{deliveryMessages[form.city]}</p>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-5">
         <div>
-          <label className="block text-[0.7rem] tracking-[0.15em] uppercase text-muted-foreground font-medium mb-1.5">
-            Tu nombre
-          </label>
+          <label className={labelClass}>Nombre completo</label>
           <input
             type="text"
             placeholder="Nombre completo"
             value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full px-4 py-3.5 rounded-xl border border-border bg-input-background text-foreground text-sm font-light placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/60 transition-colors"
+            onChange={(e) => change("name", e.target.value)}
+            className={inputClass}
             required
           />
         </div>
         <div>
-          <label className="block text-[0.7rem] tracking-[0.15em] uppercase text-muted-foreground font-medium mb-1.5">
-            WhatsApp
-          </label>
+          <label className={labelClass}>Teléfono / WhatsApp</label>
           <input
             type="tel"
-            placeholder="+34 600 000 000"
+            placeholder="+52 123 456 7890"
             value={form.phone}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-            className="w-full px-4 py-3.5 rounded-xl border border-border bg-input-background text-foreground text-sm font-light placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/60 transition-colors"
+            onChange={(e) => change("phone", e.target.value)}
+            className={inputClass}
             required
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Calle y número</label>
+          <input
+            type="text"
+            placeholder="Calle, número"
+            value={form.street}
+            onChange={(e) => change("street", e.target.value)}
+            className={inputClass}
+            required
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Colonia</label>
+          <input
+            type="text"
+            placeholder="Colonia"
+            value={form.colony}
+            onChange={(e) => change("colony", e.target.value)}
+            className={inputClass}
+            required
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Ciudad</label>
+          <select
+            value={form.city}
+            onChange={(e) => change("city", e.target.value)}
+            className={inputClass}
+            required
+          >
+            <option value="">Selecciona tu ciudad</option>
+            {cities.map((city) => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>
+            Código Postal <span className="text-muted-foreground/50">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="CP"
+            value={form.zip}
+            onChange={(e) => change("zip", e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>
+            Referencias del domicilio <span className="text-muted-foreground/50">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="Ej: casa color verde, frente al parque"
+            value={form.references}
+            onChange={(e) => change("references", e.target.value)}
+            className={inputClass}
           />
         </div>
 
@@ -559,14 +695,19 @@ function StepOffer({ sev }: { sev: Severity }) {
           className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-body font-medium text-sm tracking-[0.06em] flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] mt-1"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
-          Solicitar mi kit ahora
+          Registrar mi pedido
           <ArrowRight className="w-4 h-4" />
         </button>
       </form>
 
+      {/* Transition text */}
+      <p className="text-[0.75rem] text-muted-foreground font-light leading-relaxed text-center max-w-[300px] mx-auto mb-6">
+        Al registrar tu pedido, el seguimiento continuará por WhatsApp. Desde ahí confirmaremos tu entrega y te acompañaremos durante los primeros 21 días para ayudarte a mantener tu rutina con Clean Nails.
+      </p>
+
       {/* Micro trust */}
       <div className="flex flex-col gap-2 mb-6">
-        {["Envío gratuito a domicilio", "Garantía de devolución 60 días", "Sin suscripciones ni cargos ocultos"].map(
+        {["Envío gratuito a domicilio", "Garantía de 30 días", "Sin suscripciones ni cargos ocultos"].map(
           (t) => (
             <div key={t} className="flex items-center gap-2 text-[0.78rem] text-muted-foreground font-light">
               <span className="w-1 h-1 rounded-full bg-accent shrink-0" />
