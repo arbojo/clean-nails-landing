@@ -22,8 +22,14 @@ interface OrderRequestEvent {
     id: string
     customer_name: string
     phone: string
+    street: string
+    colony: string
     city: string
+    state: string
+    zip: string | null
+    references: string | null
     product_name: string
+    quantity: number
     total: number
     support_opt_in: boolean | null
     metadata: Record<string, unknown>
@@ -53,8 +59,14 @@ interface OrderRequestEnvelope {
     id: string
     customer_name: string
     phone: string
+    street: string
+    colony: string
     city: string
+    state: string
+    zip: string | null
+    references: string | null
     product_name: string
+    quantity: number
     total: number
     support_opt_in: boolean
     metadata: Record<string, unknown>
@@ -139,8 +151,14 @@ serve(async (req) => {
         id: event.record.id,
         customer_name: event.record.customer_name,
         phone: event.record.phone,
+        street: event.record.street,
+        colony: event.record.colony,
         city: event.record.city,
+        state: event.record.state,
+        zip: event.record.zip,
+        references: event.record.references,
         product_name: event.record.product_name,
+        quantity: event.record.quantity,
         total: event.record.total,
         support_opt_in: optIn,
         metadata: event.record.metadata,
