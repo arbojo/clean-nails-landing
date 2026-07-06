@@ -491,18 +491,31 @@ function StepOffer({ sev }: { sev: Severity }) {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || !form.street.trim() || !form.colony.trim() || !form.city) return;
 
-    const { error } = await supabase.from("orders").insert({
-      name: form.name,
+    const metadata = {
+      product: {
+        severity: sev,
+      },
+      landing: {
+        version: "v1",
+        campaign: "",
+      },
+    };
+
+    const { error } = await supabase.from("order_requests").insert({
+      customer_name: form.name,
       phone: form.phone,
       street: form.street,
       colony: form.colony,
       city: form.city,
+      state: "",
       zip: form.zip || null,
       references: form.references || null,
-      severity: sev,
-      product: conditionMeta[sev].product,
+      product_id: null,
+      product_name: conditionMeta[sev].product,
+      quantity: 1,
       total: 599.00,
       support_opt_in: form.support_opt_in,
+      metadata: metadata,
     });
 
     if (error) {
