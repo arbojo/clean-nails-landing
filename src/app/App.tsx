@@ -8,6 +8,7 @@ import severoImg from "../assets/severo.jpg";
 import finalImg from "../assets/final.jpeg";
 import { supabase } from "../lib/supabase";
 import { startSession, track, finishSession, setConverted } from "../lib/insights";
+import EventExplorer from "./pages/EventExplorer";
 
 type Severity = "mild" | "moderate" | "severe";
 
@@ -202,7 +203,11 @@ function StepAssessment({ onSelect }: { onSelect: (s: Severity) => void }) {
       <div className="flex flex-col gap-3.5">
         {severities.map((sev) => {
           const c = conditionMeta[sev];
-          return (
+  if (typeof window !== "undefined" && window.location.pathname === "/dev/events") {
+    return <EventExplorer />;
+  }
+
+  return (
             <button
               key={sev}
               onClick={() => onSelect(sev)}
