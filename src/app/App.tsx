@@ -453,6 +453,7 @@ function StepOffer({ sev }: { sev: Severity }) {
     city: "",
     zip: "",
     references: "",
+    support_opt_in: true,
   });
   const [submitted, setSubmitted] = useState(false);
 
@@ -483,6 +484,7 @@ function StepOffer({ sev }: { sev: Severity }) {
       severity: sev,
       product: conditionMeta[sev].product,
       total: 599.00,
+      support_opt_in: form.support_opt_in,
     });
 
     if (error) {
@@ -499,7 +501,8 @@ function StepOffer({ sev }: { sev: Severity }) {
       (form.zip ? `CP: ${form.zip}\n` : "") +
       (form.references ? `Referencias: ${form.references}\n` : "") +
       `\nTratamiento: ${conditionMeta[sev].labelEs}\n` +
-      `Producto: ${conditionMeta[sev].product}`
+      `Producto: ${conditionMeta[sev].product}\n` +
+      `Acompañamiento: ${form.support_opt_in ? "Sí" : "No"}`
     );
     window.open(`https://wa.me/524775250039?text=${msg}`, "_blank");
     setSubmitted(true);
@@ -525,9 +528,11 @@ function StepOffer({ sev }: { sev: Severity }) {
         <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[300px] mb-2">
           Te escribiremos por WhatsApp al <strong className="text-foreground font-medium">{form.phone}</strong> para coordinar la entrega en <strong className="text-foreground font-medium">{form.city}</strong>.
         </p>
-        <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[300px]">
-          Durante 21 días tendrás acompañamiento para aprovechar al máximo tu dispositivo.
-        </p>
+        {form.support_opt_in && (
+          <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[300px]">
+            Durante 21 días tendrás acompañamiento para aprovechar al máximo tu dispositivo.
+          </p>
+        )}
         <div className="mt-8 w-full rounded-xl bg-secondary border border-border px-5 py-4 text-left">
           <p className="text-[0.65rem] tracking-[0.2em] uppercase text-muted-foreground font-medium mb-2">Tu pedido</p>
           <p className="text-base font-medium text-foreground">{form.name}</p>
@@ -690,9 +695,42 @@ function StepOffer({ sev }: { sev: Severity }) {
           />
         </div>
 
+        {/* Support opt-in */}
+        <div className="rounded-xl border border-border bg-card px-4 py-3 mt-2">
+          <p className="text-[0.65rem] tracking-[0.18em] uppercase text-muted-foreground font-medium mb-3">Acompañamiento personal</p>
+          <div className="flex flex-col gap-2">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="radio"
+                name="support_opt_in"
+                checked={form.support_opt_in === true}
+                onChange={() => setForm({ ...form, support_opt_in: true })}
+                className="mt-0.5 accent-accent shrink-0"
+              />
+              <div className="flex flex-col">
+                <span className="text-[0.83rem] text-foreground font-medium">Sí, quiero acompañamiento por 21 días</span>
+                <span className="text-[0.72rem] text-muted-foreground font-light">Te ayudamos a mantener tu rutina y resolver dudas</span>
+              </div>
+            </label>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="radio"
+                name="support_opt_in"
+                checked={form.support_opt_in === false}
+                onChange={() => setForm({ ...form, support_opt_in: false })}
+                className="mt-0.5 accent-accent shrink-0"
+              />
+              <div className="flex flex-col">
+                <span className="text-[0.83rem] text-foreground font-medium">Solo confirmación y entrega</span>
+                <span className="text-[0.72rem] text-muted-foreground font-light">Sin mensajes de seguimiento</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
         <button
           type="submit"
-          className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-body font-medium text-sm tracking-[0.06em] flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] mt-1"
+          className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-body font-medium text-sm tracking-[0.06em] flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] mt-4"
           style={{ WebkitTapHighlightColor: "transparent" }}
         >
           Registrar mi pedido
@@ -701,9 +739,15 @@ function StepOffer({ sev }: { sev: Severity }) {
       </form>
 
       {/* Transition text */}
-      <p className="text-[0.75rem] text-muted-foreground font-light leading-relaxed text-center max-w-[300px] mx-auto mb-6">
-        Al registrar tu pedido, el seguimiento continuará por WhatsApp. Desde ahí confirmaremos tu entrega y te acompañaremos durante los primeros 21 días para ayudarte a mantener tu rutina con Clean Nails.
-      </p>
+      {form.support_opt_in ? (
+        <p className="text-[0.75rem] text-muted-foreground font-light leading-relaxed text-center max-w-[300px] mx-auto mb-6">
+          Al registrar tu pedido, el seguimiento continuará por WhatsApp. Desde ahí confirmaremos tu entrega y te acompañaremos durante los primeros 21 días para ayudarte a mantener tu rutina con Clean Nails.
+        </p>
+      ) : (
+        <p className="text-[0.75rem] text-muted-foreground font-light leading-relaxed text-center max-w-[300px] mx-auto mb-6">
+          Al registrar tu pedido, el seguimiento continuará por WhatsApp para coordinar la entrega.
+        </p>
+      )}
 
       {/* Micro trust */}
       <div className="flex flex-col gap-2 mb-6">

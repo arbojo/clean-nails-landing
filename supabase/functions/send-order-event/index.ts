@@ -1,28 +1,76 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 
-interface OrderRecord {
-  id: string
-  name: string
-  phone: string
-  city: string
-  status: string
-}
-
 interface OrderEvent {
   type: string
   table: string
-  record: OrderRecord
+  record: {
+    id: string
+    name: string
+    phone: string
+    city: string
+    status: string
+    support_opt_in: boolean | null
+  }
   old_record: { status: string }
   timestamp: string
 }
 
-interface KusanaliPayload {
-  order_id: string
-  status: string
-  name: string
-  phone: string
-  city: string
+interface EventEnvelope {
+  event_id: string
+  type: string
+  order: {
+    id: string
+    name: string
+    phone: string
+    city: string
+    status: string
+    support_opt_in: boolean
+  }
   timestamp: string
+}
+
+const RETRIES = [
+  { delay: 500 },
+  { delay: 1500 },
+  { delay: 3000 },
+]
+const TIMEOUT_MS = 5000
+
+async function sendWithRetry(
+  url: string,
+  token: string,
+  body: EventEnvelope,
+): Promise<Response> {
+  let lastError: Error | null = null
+
+  for (const { delay } of RETRIES) {
+    if (lastError) {
+      await new Promise((r) => setTimeout(r, delay))
+    }
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      })
+      clearTimeout(timer)
+      return response
+    } catch (err) {
+      clearTimeout(timer)
+      lastError = err instanceof Error ? err : new Error(String(err))
+      console.error(`send-order-event: retry attempt failed — ${lastError.message}`)
+    }
+  }
+
+  throw lastError ?? new Error('All retries exhausted')
 }
 
 serve(async (req) => {
@@ -48,32 +96,38 @@ serve(async (req) => {
     return new Response('Ignored: not a status change event', { status: 200 })
   }
 
-  const payload: KusanaliPayload = {
-    order_id: event.record.id,
-    status: event.record.status,
-    name: event.record.name,
-    phone: event.record.phone,
-    city: event.record.city,
+  const optIn = event.record.support_opt_in ?? true
+
+  const envelope: EventEnvelope = {
+    event_id: crypto.randomUUID(),
+    type: event.type,
+    order: {
+      id: event.record.id,
+      name: event.record.name,
+      phone: event.record.phone,
+      city: event.record.city,
+      status: event.record.status,
+      support_opt_in: optIn,
+    },
     timestamp: event.timestamp,
   }
 
   const kusanaliUrl = Deno.env.get('KUSANALI_URL') ?? 'https://kusanali-api/webhook/order-status'
   const kusanaliToken = Deno.env.get('KUSANALI_TOKEN') ?? ''
 
-  const response = await fetch(kusanaliUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${kusanaliToken}`,
-    },
-    body: JSON.stringify(payload),
-  })
+  try {
+    const response = await sendWithRetry(kusanaliUrl, kusanaliToken, envelope)
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error(`Kusanali returned ${response.status}: ${errorText}`)
-    return new Response('Failed to forward event to Kusanali', { status: 502 })
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`send-order-event: Kusanali returned ${response.status} — ${errorText}`)
+      return new Response('Failed to forward event to Kusanali', { status: 502 })
+    }
+
+    return new Response('OK', { status: 200 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`send-order-event: all retries exhausted — ${message}`)
+    return new Response('Failed after retries', { status: 502 })
   }
-
-  return new Response('OK', { status: 200 })
 })
