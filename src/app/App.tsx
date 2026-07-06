@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ChevronLeft, Star, Clock, Heart, Droplets, CheckCircle2 } from "lucide-react";
 import leveImg from "../assets/leve.jpg";
@@ -30,6 +30,9 @@ const conditionMeta = {
       { name: "Carmen R.", age: 48, text: "Empecé a notar mis uñas más opacas. Usé Clean Nails 4 semanas y la apariencia mejoró mucho. No esperaba que funcionara tan bien.", weeks: 4 },
       { name: "Alex M.", age: 47, text: "Lo ignoré por meses. Cuando empecé con Clean Nails, en 3 semanas ya veía la diferencia. Mis uñas se veían mucho mejor.", weeks: 3 },
       { name: "Lucía G.", age: 51, text: "Mis amigas pensaron que era una manicura nueva. Solo era Clean Nails después de un mes de uso constante.", weeks: 5 },
+      { name: "Andrea M.", age: 34, text: "Noté mis uñas más opacas después del embarazo. En un mes de Clean Nails recuperaron su brillo natural.", weeks: 4 },
+      { name: "Fernanda L.", age: 39, text: "Siempre cuidé mis uñas, pero empezaron a verse apagadas. Clean Nails me devolvió la confianza para mostrar mis manos.", weeks: 5 },
+      { name: "Roberto S.", age: 44, text: "Por el trabajo tengo las manos en agua todo el día. Mis uñas se pusieron opacas. Esto funcionó mejor de lo que esperaba.", weeks: 6 },
     ],
     product: "Clean Nails — Dispositivo de Luz",
     productDesc:
@@ -53,7 +56,10 @@ const conditionMeta = {
     testimonials: [
       { name: "Patricia S.", age: 57, text: "Probé cremas, esmaltes, de todo. Clean Nails fue lo único que realmente hizo la diferencia. A las 6 semanas, ya no me preocupaba mostrar mis pies.", weeks: 6 },
       { name: "Carlos R.", age: 55, text: "La gente notó el cambio y me preguntó qué había hecho. Les sorprendió que fuera un dispositivo tan sencillo.", weeks: 7 },
-      { name: "Elena V.", age: 61, text: "Creí que esto no tenía solución. Me alegra haberle dado una oportunidad.", weeks: 8 },
+      { name: "Elena V.", age: 58, text: "Creí que esto no tenía solución. Me alegra haberle dado una oportunidad.", weeks: 8 },
+      { name: "Jorge L.", age: 42, text: "Empecé a notar cambios en mis uñas y no sabía qué hacer. Probé de todo. Clean Nails fue la primera vez que algo funcionó de verdad.", weeks: 6 },
+      { name: "Mariana K.", age: 38, text: "Lo noté hace un año y probé mil cosas. Con constancia y este dispositivo, la diferencia es real.", weeks: 7 },
+      { name: "Ricardo M.", age: 53, text: "Pensé que era cosa de la edad y ya. Una amiga me prestó su Clean Nails. A las 5 semanas compré el mío.", weeks: 5 },
     ],
     product: "Clean Nails — Dispositivo de Luz",
     productDesc:
@@ -75,9 +81,12 @@ const conditionMeta = {
     solutionBody:
       "Constancia y tecnología de luz. Clean Nails se usa 7 minutos, dos veces al día. La mejora es progresiva, pero los resultados hablan solos.",
     testimonials: [
-      { name: "Rosa T.", age: 64, text: "Dos años probando cosas sin resultado. Clean Nails me tomó 10 semanas, pero valió cada día.", weeks: 10 },
-      { name: "Consuelo A.", age: 67, text: "Volví a usar sandalias después de tres años. Mi familia no lo podía creer. Yo sí, porque vi el cambio paso a paso.", weeks: 11 },
       { name: "Dolores M.", age: 59, text: "El resultado habla por sí solo. Solo había que ser constante.", weeks: 9 },
+      { name: "Rosa T.", age: 58, text: "Años probando cosas sin resultado. Clean Nails me tomó 10 semanas, pero valió cada día.", weeks: 10 },
+      { name: "Consuelo A.", age: 56, text: "Volví a usar sandalias después de varios años. Mi familia no lo podía creer. Vi el cambio paso a paso.", weeks: 11 },
+      { name: "Hugo P.", age: 52, text: "Llevaba tiempo con esto y ya había perdido la esperanza. Mi hija me regaló el dispositivo y sí dio resultado.", weeks: 10 },
+      { name: "Laura F.", age: 46, text: "Nunca pensé que algo tan sencillo como 7 minutos al día pudiera hacer tanta diferencia. Ahora lo recomiendo a todas mis conocidas.", weeks: 9 },
+      { name: "Arturo D.", age: 49, text: "Soy escéptico con estas cosas. Pero los cambios fueron tan claros que hasta mi esposa notó la diferencia antes que yo.", weeks: 12 },
     ],
     product: "Clean Nails — Dispositivo de Luz",
     productDesc:
@@ -86,6 +95,15 @@ const conditionMeta = {
     timeframe: "8–12 semanas de transformación completa",
   },
 };
+
+function pickRandom<T>(arr: T[], n: number): T[] {
+  const shuffled = [...arr];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, n);
+}
 
 const objections = [
   { Icon: Clock, title: "Has probado muchos productos", text: "Cremas, esmaltes, remedios caseros, productos de farmacia… Si estás aquí, probablemente ya lo intentaste. Y nada te dio el resultado que esperabas." },
@@ -342,7 +360,7 @@ function StepProof({ sev, onNext }: { sev: Severity; onNext: () => void }) {
       </div>
 
       <div className="flex flex-col gap-3.5 mb-8">
-        {c.testimonials.map((t) => (
+        {pickRandom(c.testimonials, 3).map((t) => (
           <div key={t.name} className="rounded-2xl border border-border bg-card px-5 py-5">
             <div className="flex gap-0.5 mb-3">
               {[1, 2, 3, 4, 5].map((i) => (
