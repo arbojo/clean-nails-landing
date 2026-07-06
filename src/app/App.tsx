@@ -580,7 +580,7 @@ function StepOffer({ sev }: { sev: Severity }) {
           <em>listo para ti.</em>
         </h2>
         <p className="text-sm text-muted-foreground font-light leading-relaxed max-w-[260px] mx-auto">
-          Completa tus datos y te contactaremos al <strong className="text-foreground font-medium">477 525 0039</strong> para coordinar la entrega.
+          Completa tus datos y te contactaremos al <strong className="text-foreground font-medium">{form.phone || "teléfono registrado"}</strong> para coordinar la entrega.
         </p>
       </div>
 
