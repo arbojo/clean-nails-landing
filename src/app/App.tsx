@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, ChevronLeft, Star, Clock, Heart, Droplets, CheckCircle2 } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronDown, X, Star, Clock, Heart, Droplets, CheckCircle2 } from "lucide-react";
 import leveImg from "../assets/leve.jpg";
 import ExitModal from "./components/ExitModal";
 import moderadoImg from "../assets/moderado.jpg";
@@ -822,6 +822,194 @@ function StepOffer({ sev }: { sev: Severity }) {
   );
 }
 
+// ─── Floating FAQ ──────────────────────────────────────────────────────────────
+
+type FaqItem = { q: string; r: string };
+
+const baseFaq: FaqItem[] = [
+  {
+    q: "¿Qué es Clean Nails exactamente?",
+    r: "Clean Nails es un dispositivo de uso doméstico que utiliza luz UV e infrarroja de baja intensidad (luz fría) para ayudar a mejorar el aspecto de las uñas afectadas por hongos como la onicomicosis. Su función es apoyar la reducción del hongo mientras ayuda a mantener un entorno menos favorable para su crecimiento.",
+  },
+  {
+    q: "¿Duele o quema?",
+    r: "No. Es completamente indoloro. Funciona con luz fría, por lo que no genera calor, no quema y no causa molestia durante el uso.",
+  },
+  {
+    q: "¿Cómo se usa?",
+    r: "2 veces al día\n2 sesiones de 7 minutos por uso\nSe adapta a uñas de manos y pies\n\nIMPORTANTE: Antes de cada uso, se debe limar ligeramente la superficie de la uña para permitir mejor acción del dispositivo.\n\nRecomendación: mantener la uña seca.\nSi te bañas en la noche, úsalo en la mañana.\nSi te bañas en la mañana, úsalo en la noche.",
+  },
+  {
+    q: "¿En cuánto tiempo veo resultados?",
+    r: "Depende del nivel del hongo y la constancia. Los cambios suelen comenzar a notarse en las primeras semanas con uso continuo.",
+  },
+  {
+    q: "¿Es seguro usarlo todos los días?",
+    r: "Sí. Está diseñado para uso doméstico diario siguiendo instrucciones. No genera dolor ni daño en la piel o la uña.",
+  },
+];
+
+const conditionalFaq: Record<Severity, FaqItem[]> = {
+  mild: [
+    {
+      q: "¿Aunque sea leve realmente necesito usarlo?",
+      r: "Sí, ayuda a evitar que el problema avance y mejora la apariencia progresivamente.",
+    },
+    {
+      q: "¿Esto es más preventivo o tratamiento?",
+      r: "Ambos. Ayuda a controlar y mejorar el estado actual.",
+    },
+  ],
+  moderate: [
+    {
+      q: "¿En cuánto tiempo debería ver cambios visibles?",
+      r: "Depende de la constancia, pero normalmente los cambios comienzan a notarse en las primeras semanas.",
+    },
+    {
+      q: "Ya probé otros tratamientos, ¿esto es diferente?",
+      r: "Sí. No es crema ni tratamiento tópico. Utiliza luz dirigida para actuar de forma distinta.",
+    },
+  ],
+  severe: [
+    {
+      q: "¿Funciona si ya está muy avanzado?",
+      r: "Puede ayudar, pero requiere constancia estricta para mejores resultados.",
+    },
+    {
+      q: "¿Por qué otros tratamientos no me funcionaron?",
+      r: "Muchos tratamientos son tópicos; este funciona con luz dirigida y enfoque diferente.",
+    },
+  ],
+};
+
+function FaqAccordion({ items }: { items: FaqItem[] }) {
+  const [open, setOpen] = useState<Set<string>>(new Set());
+
+  const toggle = (q: string) => {
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(q)) next.delete(q);
+      else next.add(q);
+      return next;
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      {items.map(({ q, r }) => {
+        const isOpen = open.has(q);
+        return (
+          <div
+            key={q}
+            className="rounded-xl border border-border bg-card overflow-hidden transition-shadow duration-200"
+          >
+            <button
+              onClick={() => toggle(q)}
+              className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left text-sm font-medium text-foreground/90 leading-snug"
+            >
+              <span>{q}</span>
+              <ChevronDown
+                className={`w-4 h-4 shrink-0 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {isOpen && (
+              <div className="px-5 pb-4 text-[0.83rem] text-muted-foreground font-light leading-relaxed whitespace-pre-line">
+                {r}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FaqOverlay({ sev, onClose, onGoToCheckout }: { sev: Severity; onClose: () => void; onGoToCheckout: () => void }) {
+  const extra = conditionalFaq[sev];
+  const ctaText: Record<Severity, string> = {
+    mild: "Empezar prevención",
+    moderate: "Iniciar recuperación",
+    severe: "Iniciar tratamiento ahora",
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 32 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 32 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="relative w-full max-w-lg max-h-[85dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-background px-5 pt-6 pb-6 shadow-xl"
+      >
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-display text-xl text-foreground">
+            Antes de terminar<br />
+            <em>tu pedido</em>
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-secondary transition-colors"
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        <FaqAccordion items={baseFaq} />
+
+        {extra.length > 0 && (
+          <>
+            <div className="flex items-center gap-3 my-5">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-[0.65rem] tracking-[0.15em] uppercase text-muted-foreground font-medium shrink-0">
+                Según tu caso
+              </span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <FaqAccordion items={extra} />
+          </>
+        )}
+
+        <button
+          onClick={onGoToCheckout}
+          className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-body font-medium text-sm tracking-[0.06em] flex items-center justify-center gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] mt-6"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          {ctaText[sev]}
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
+function FloatingFaqButton({ visible, onClick }: { visible: boolean; onClick: () => void }) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.button
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 16 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          onClick={onClick}
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-5 py-3 rounded-full bg-primary text-primary-foreground font-body font-medium text-sm tracking-[0.04em] shadow-lg hover:opacity-90 active:scale-[0.97] transition-all"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          ¿Tienes dudas?
+        </motion.button>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 const TOTAL_STEPS = 6;
@@ -831,6 +1019,10 @@ export default function App() {
   const [dir, setDir] = useState(1);
   const [selected, setSelected] = useState<Severity | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
+  const [showFaq, setShowFaq] = useState(false);
+  const [timerReady, setTimerReady] = useState(false);
+  const [scrolledPastHalf, setScrolledPastHalf] = useState(false);
+  const faqEverOpened = useRef(false);
   const stepStartRef = useRef(Date.now());
 
   const go = (n: number) => {
@@ -884,6 +1076,27 @@ export default function App() {
     if (step === 5) track("offer_view");
   }, [step]);
 
+  // 8-second timer for floating FAQ button
+  useEffect(() => {
+    setTimerReady(false);
+    setScrolledPastHalf(false);
+    const t = setTimeout(() => setTimerReady(true), 8000);
+    return () => clearTimeout(t);
+  }, [step]);
+
+  // Scroll detection for floating FAQ button
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight;
+      const winHeight = window.innerHeight;
+      const pct = docHeight > winHeight ? scrollTop / (docHeight - winHeight) : 1;
+      if (pct > 0.5) setScrolledPastHalf(true);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const handleSelect = (sev: Severity) => {
     setSelected(sev);
     setDir(1);
@@ -900,6 +1113,24 @@ export default function App() {
     setShowExitModal(false);
     back();
   };
+
+  const goToCheckout = () => {
+    setShowFaq(false);
+    const n = TOTAL_STEPS - 1;
+    window.history.pushState({ step: n }, "");
+    go(n);
+  };
+
+  const openFaq = () => {
+    setShowFaq(true);
+    faqEverOpened.current = true;
+  };
+
+  const closeFaq = () => {
+    setShowFaq(false);
+  };
+
+  const showButton = step >= 4 && step < TOTAL_STEPS - 1 && (timerReady || scrolledPastHalf) && !faqEverOpened.current;
 
   const screens = [
     <StepAssessment key="0" onSelect={handleSelect} />,
@@ -927,6 +1158,14 @@ export default function App() {
         >
           {screens[step]}
         </motion.div>
+      </AnimatePresence>
+
+      <FloatingFaqButton visible={showButton} onClick={openFaq} />
+
+      <AnimatePresence>
+        {showFaq && (
+          <FaqOverlay sev={selected ?? "mild"} onClose={closeFaq} onGoToCheckout={goToCheckout} />
+        )}
       </AnimatePresence>
 
       <ExitModal
