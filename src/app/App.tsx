@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ChevronLeft, Star, Clock, Heart, Droplets, CheckCircle2 } from "lucide-react";
 import leveImg from "../assets/leve.jpg";
@@ -7,6 +7,7 @@ import moderadoImg from "../assets/moderado.jpg";
 import severoImg from "../assets/severo.jpg";
 import finalImg from "../assets/final.jpeg";
 import { supabase } from "../lib/supabase";
+import { startSession, track, finishSession, setConverted } from "../lib/insights";
 
 type Severity = "mild" | "moderate" | "severe";
 
@@ -491,6 +492,8 @@ function StepOffer({ sev }: { sev: Severity }) {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || !form.street.trim() || !form.colony.trim() || !form.city) return;
 
+    track("form_submitted");
+
     const metadata = {
       product: {
         severity: sev,
@@ -501,7 +504,7 @@ function StepOffer({ sev }: { sev: Severity }) {
       },
     };
 
-    const { error } = await supabase.from("order_requests").insert({
+    const { data, error } = await supabase.from("order_requests").insert({
       customer_name: form.name,
       phone: form.phone,
       street: form.street,
@@ -516,12 +519,15 @@ function StepOffer({ sev }: { sev: Severity }) {
       total: 599.00,
       support_opt_in: form.support_opt_in,
       metadata: metadata,
-    });
+    }).select("id").single();
 
     if (error) {
       console.error("Error al registrar pedido:", error);
       return;
     }
+
+    track("order_request_created", { order_request_id: data.id });
+    setConverted(data.id);
 
     const msg = encodeURIComponent(
       `*Nuevo pedido Clean Nails*\n\n` +
@@ -650,6 +656,7 @@ function StepOffer({ sev }: { sev: Severity }) {
             placeholder="Nombre completo"
             value={form.name}
             onChange={(e) => change("name", e.target.value)}
+            onFocus={() => { if (!formStartedRef.current) { formStartedRef.current = true; track("form_started"); } }}
             className={inputClass}
             required
           />
@@ -691,7 +698,7 @@ function StepOffer({ sev }: { sev: Severity }) {
           <label className={labelClass}>Ciudad</label>
           <select
             value={form.city}
-            onChange={(e) => change("city", e.target.value)}
+            onChange={(e) => { change("city", e.target.value); if (e.target.value) track("city_selected", { city: e.target.value }); }}
             className={inputClass}
             required
           >
@@ -735,7 +742,7 @@ function StepOffer({ sev }: { sev: Severity }) {
                 type="radio"
                 name="support_opt_in"
                 checked={form.support_opt_in === true}
-                onChange={() => setForm({ ...form, support_opt_in: true })}
+                onChange={() => { setForm({ ...form, support_opt_in: true }); track("support_opt_in_enabled"); }}
                 className="mt-0.5 accent-accent shrink-0"
               />
               <div className="flex flex-col">
@@ -748,7 +755,7 @@ function StepOffer({ sev }: { sev: Severity }) {
                 type="radio"
                 name="support_opt_in"
                 checked={form.support_opt_in === false}
-                onChange={() => setForm({ ...form, support_opt_in: false })}
+                onChange={() => { setForm({ ...form, support_opt_in: false }); track("support_opt_in_disabled"); }}
                 className="mt-0.5 accent-accent shrink-0"
               />
               <div className="flex flex-col">
@@ -818,6 +825,8 @@ export default function App() {
   const [dir, setDir] = useState(1);
   const [selected, setSelected] = useState<Severity | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
+  const stepStartRef = useRef(Date.now());
+  const formStartedRef = useRef(false);
 
   const go = (n: number) => {
     setDir(n > step ? 1 : -1);
@@ -851,6 +860,23 @@ export default function App() {
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
+  }, [step]);
+
+  const stepTitles = ["¿Qué ves en tus uñas?", "¿Te suena esto?", "¿Por qué no ha funcionado antes?", "Testimonios", "Conoce Clean Nails", "Tu kit está listo"];
+
+  // Start analytics session on mount
+  useEffect(() => {
+    startSession();
+    return () => { finishSession(); };
+  }, []);
+
+  // Track step changes
+  useEffect(() => {
+    const prev = step;
+    track("step_completed", { step: prev, time_spent_seconds: Math.floor((Date.now() - stepStartRef.current) / 1000) });
+    stepStartRef.current = Date.now();
+    track("step_view", { step: step + 1, title: stepTitles[step] });
+    if (step === 5) track("offer_view");
   }, [step]);
 
   const handleSelect = (sev: Severity) => {
