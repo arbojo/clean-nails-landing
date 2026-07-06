@@ -469,6 +469,7 @@ function StepSolution({ sev, onNext }: { sev: Severity; onNext: () => void }) {
 
 function StepOffer({ sev }: { sev: Severity }) {
   const c = conditionMeta[sev];
+  const formStartedRef = useRef(false);
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -831,7 +832,6 @@ export default function App() {
   const [selected, setSelected] = useState<Severity | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
   const stepStartRef = useRef(Date.now());
-  const formStartedRef = useRef(false);
 
   const go = (n: number) => {
     setDir(n > step ? 1 : -1);
