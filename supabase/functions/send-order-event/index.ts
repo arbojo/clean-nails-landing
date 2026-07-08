@@ -120,7 +120,7 @@ async function sendWithRetry(
 
 serve(async (req) => {
   const auth = req.headers.get('Authorization')
-  const expectedSecret = Deno.env.get('SUPABASE_WEBHOOK_SECRET')
+  const expectedSecret = Deno.env.get('CLEAN_NAILS_WEBHOOK_SECRET')
 
   if (!auth || !auth.startsWith('Bearer ') || !expectedSecret || auth.slice(7) !== expectedSecret) {
     return new Response('Unauthorized', { status: 401 })

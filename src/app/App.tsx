@@ -873,7 +873,7 @@ const conditionalFaq: Record<Severity, FaqItem[]> = {
   severe: [
     {
       q: "¿Funciona si ya está muy avanzado?",
-      r: "Puede ayudar, pero requiere constancia estricta para mejores resultados.",
+      r: "¡Claro! Funciona y funciona muy bien. Mientras seas constante y no abandones las sesiones, verás la mejoría.",
     },
     {
       q: "¿Por qué otros tratamientos no me funcionaron?",

@@ -4,7 +4,13 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   payload JSONB;
+  fn_url TEXT;
+  secret TEXT;
+  http_response INTEGER;
 BEGIN
+  SELECT value INTO fn_url FROM _secrets WHERE key = 'edge_function_url';
+  SELECT value INTO secret FROM _secrets WHERE key = 'webhook_secret';
+
   payload := jsonb_build_object(
     'type', 'ORDER_REQUEST_CREATED',
     'table', 'order_requests',
@@ -22,15 +28,14 @@ BEGIN
     'timestamp', NOW()
   );
 
-  PERFORM
-    net.http_post(
-      url := current_setting('app.settings.edge_function_url', true),
-      headers := jsonb_build_object(
-        'Content-Type', 'application/json',
-        'Authorization', concat('Bearer ', current_setting('app.settings.webhook_secret', true))
-      ),
-      body := payload::text
-    );
+  SELECT public.http_post(
+    url := fn_url,
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', concat('Bearer ', secret)
+    ),
+    body := payload::text
+  ) INTO http_response;
 
   RETURN NEW;
 END;
